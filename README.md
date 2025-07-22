@@ -32,6 +32,27 @@ Diversity among agents' behaviors and heterogeneity in virtual crowds in general
 	</a>
 </p>
 
+### 📖 Citation
+```bibtex
+@inproceedings{Panayiotou2022CCP,
+  author = {Panayiotou, Andreas and Kyriakou, Theodoros and Lemonari, Marilena and Chrysanthou, Yiorgos and Charalambous, Panayiotis},
+  title = {CCP: Configurable Crowd Profiles},
+  year = {2022},
+  isbn = {9781450393379},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3528233.3530712},
+  doi = {10.1145/3528233.3530712},
+  booktitle = {ACM SIGGRAPH 2022 Conference Proceedings},
+  articleno = {53},
+  numpages = {10},
+  keywords = {crowd authoring, crowd simulation, data-driven methods, reinforcement learning., user control},
+  location = {Vancouver, BC, Canada},
+  series = {SIGGRAPH '22}
+}
+
+```
+
 
 
 
