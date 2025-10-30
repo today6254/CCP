@@ -8,23 +8,23 @@ using Unity.MLAgents.Sensors;
 
 public class Agent_GoalOnly_Training : Agent
 {
-    //SCRIPT IS SIMILAR TO REGULAR AGENT SCRIPT BUT ONLY REWARDS REALTED TO GOAL ARE USED!
+    // 通常のエージェントスクリプトに似ていますが、「ゴールに関連する報酬のみ」を使用します
     public int agentID;
-    [Header("Movement")]
-    //Agent's Parameters.
+    [Header("移動")]
+    // エージェントのパラメータ
     public float turnSpeed = 150f;
     public float moveSpeed = 0.15f;
     private Rigidbody AgentRb;
     private Vector3 startingPos;
     private Vector3 goalPos;
     private float goalDistance;
-    [Header("Reward Parameters")]
+    [Header("報酬パラメータ")]
     public float currentGoalDistance;
     public float currentAngle;
     private Vector3 goalVector;
     private int stillCounter;
     private int rotationCounter;
-    //General Parameters
+    // 一般パラメータ
     public float reward;
     private GameObject[] spawnAreas;
     private List<Monitor_OnlyGoal_Training.GoalAndSpawn> goals;
@@ -37,9 +37,9 @@ public class Agent_GoalOnly_Training : Agent
     private GameObject closestInteraction;
     public float closeAgents = 0;
     public bool initial = true;
-    //Weights Manager
-    Monitor_OnlyGoal_Training manager;
-    //Save Route
+    // 重みを管理する Monitor
+    Monitor_OnlyGoal_Training manager; // Monitor_OnlyGoal_Training型の参照
+    // ルート保存
     List<float[]> route;
     private int countEpisode;
     private int localPhase = 1;
@@ -53,8 +53,8 @@ public class Agent_GoalOnly_Training : Agent
 
     private float[] startingWeights;
 
-    //Run only one time once scene starts
-    public override void Initialize()
+    // シーン開始時に一度だけ実行
+    public override void Initialize() // ML-Agents関係のメソッド: プレハブ複製されて一番初めに呼ばれるメソッド(GoalOnlyじゃない方はAwake())→トレーニング開始前・エージェントセットアップに適している 
     {
         this.inWeightRegion = false;
         this.AgentRb = this.GetComponent<Rigidbody>();
@@ -64,21 +64,21 @@ public class Agent_GoalOnly_Training : Agent
         this.agentParent = GameObject.Find("Agents").transform;
         this.agents = new List<GameObject>();
         this.interactionObjects = new List<GameObject>();
-        //Get goals areas in scene
+        // シーン内のゴール領域を取得
         this.goals = this.manager.getGoalAreas();
         this.weightRegionColliders = GameObject.FindGameObjectsWithTag("WeightsCollider");
     }
 
-    //Run every time a new episode starts
-    public override void OnEpisodeBegin()
+    // 各エピソード開始時に実行される
+    public override void OnEpisodeBegin() // ML-Agents関係のメソッド: エピソード開始ごとに呼ばれる
     {
         this.inWeightRegion = false;
         this.startingWeights = new float[] { this.manager.goalMax, 2.5f, this.manager.interMin, -2.0f };
-        // If first time initalize a spawn and a goal point
+        // 初回ならスポーンとゴールを初期化
         if (this.initial || this.manager.disappearOnGoal == true)
         {
             this.initial = false;
-            //Get a random agent spawn point and rotate agent to look at target
+            // ランダムなスポーン点を取得し、ゴールを向くように回転
             Vector3[] generatedPoints = randomSpawnPoints();
             this.startingPos = generatedPoints[0];
             this.goalPos = generatedPoints[1];
@@ -87,7 +87,7 @@ public class Agent_GoalOnly_Training : Agent
             if (this.manager.saveRoutes)
                 this.route.Clear();
         }
-        // If not first time keep current position as spawn point and get only a new goal point
+        // 2回目以降は現在位置をスポーン位置として扱い、ゴールのみ新たに取得
         else
         {
             this.startingPos = transform.position;
@@ -107,7 +107,7 @@ public class Agent_GoalOnly_Training : Agent
     private bool checkInWeightRegion()
     {
         float weightsDistance = this.manager.inheritWeightsDistance;
-        if (Vector3.Distance(transform.position, Vector3.zero) <= weightsDistance)
+        if (Vector3.Distance(transform.position, Vector3.zero) <= weightsDistance) // 重みゾーン内
             return true;
         try
         {
@@ -120,25 +120,26 @@ public class Agent_GoalOnly_Training : Agent
         return false;
     }
 
-    //Below code is for saving routes to csv
+    // 以下はルートをCSVに保存する処理
     private void Update()
     {
-        if (checkInWeightRegion() == true)
+        if (checkInWeightRegion() == true) // 重みゾーン内
         {
             this.inWeightRegion = true;
-            StartCoroutine(changeWeights());
+            StartCoroutine(changeWeights()); // エージェントが重みゾーンに入ってから重みを継承するまでの秒数
         }
-        else
+        else // 重みゾーン外
         {
-            if (this.manager.keepInheritWeights == false)
+            if (this.manager.keepInheritWeights == false) // ゾーン外では継承した重みを保持しない
             {
                 float weightsDistance = this.manager.inheritWeightsDistance;
-                if (Vector3.Distance(transform.position, Vector3.zero) > weightsDistance)
+                if (Vector3.Distance(transform.position, Vector3.zero) > weightsDistance) // 重みゾーン外
                     this.inWeightRegion = false;
             }
         }
 
-        if (this.manager.demoScenes == false) {
+        if (this.manager.demoScenes == false)
+        {
             this.goalWeight = this.manager.goalWeight;
             this.collWeight = this.manager.collisionWeight;
             this.interWeight = this.manager.interactWeight;
@@ -146,7 +147,7 @@ public class Agent_GoalOnly_Training : Agent
         }
         else
         {
-            if(this.inWeightRegion == false)
+            if (this.inWeightRegion == false)
             {
                 this.goalWeight = this.startingWeights[0];
                 this.collWeight = this.startingWeights[1];
@@ -157,17 +158,17 @@ public class Agent_GoalOnly_Training : Agent
             {
                 if (this.manager.multiBehaviors == true)
                 {
-                    float goalAgents = (int) (this.manager.goalPercentage * this.manager.numOfAgents) / 100;
+                    float goalAgents = (int)(this.manager.goalPercentage * this.manager.numOfAgents) / 100;
                     float groupAgents = (int)(this.manager.groupPercentage * this.manager.numOfAgents) / 100;
                     float interactAgents = (int)(this.manager.interactionPercentage * this.manager.numOfAgents) / 100;
 
                     List<float[]> ratios = new List<float[]>();
-                    ratios.Add(new float[] { goalAgents , 1.8f, 2f, -5f, -2f});
+                    ratios.Add(new float[] { goalAgents, 1.8f, 2f, -5f, -2f });
                     ratios.Add(new float[] { interactAgents, 0.1f, 2f, 5f, 0f });
                     ratios.Add(new float[] { groupAgents, 0.1f, 1.5f, -2f, 5f });
                     ratios.Sort((p1, p2) => p1[0].CompareTo(p2[0]));
 
-                    //Try multible behaviours in same type
+                    // 同カテゴリ内で複数の振る舞いを試す
                     if (this.agentID < ratios[0][0])
                     {
                         this.goalWeight = ratios[0][1];
@@ -213,7 +214,7 @@ public class Agent_GoalOnly_Training : Agent
         this.reward = GetCumulativeReward();
     }
 
-    // If GridSpawn is enabled, return points in 2d grid
+    // GridSpawn が有効なら 2D グリッド上の点を返す
     private Vector3 getGridPoint(Collider spawn)
     {
         float spawnHeight = spawn.bounds.max.x - spawn.bounds.min.x;
@@ -233,7 +234,7 @@ public class Agent_GoalOnly_Training : Agent
                 list.Add(point);
             }
 
-        int index = (int)(normalizeInRange(this.agentID, 0, agentsCount) * (list.Count-1));
+        int index = (int)(normalizeInRange(this.agentID, 0, agentsCount) * (list.Count - 1));
         return list[index];
     }
 
@@ -242,9 +243,9 @@ public class Agent_GoalOnly_Training : Agent
         float angleStep = 360f / this.manager.numOfAgents;
         Vector3[] retPoints = new Vector3[2];
 
-        retPoints[0].x = this.manager.circularSpawnRadius * (float) Mathf.Sin(this.agentID * angleStep * Mathf.Deg2Rad);
+        retPoints[0].x = this.manager.circularSpawnRadius * (float)Mathf.Sin(this.agentID * angleStep * Mathf.Deg2Rad);
         retPoints[0].y = 0;
-        retPoints[0].z = this.manager.circularSpawnRadius * (float) Mathf.Cos(this.agentID * angleStep * Mathf.Deg2Rad);
+        retPoints[0].z = this.manager.circularSpawnRadius * (float)Mathf.Cos(this.agentID * angleStep * Mathf.Deg2Rad);
 
         retPoints[1] = -1f * retPoints[0];
         return retPoints;
@@ -255,8 +256,7 @@ public class Agent_GoalOnly_Training : Agent
         return g1.goalCollider.gameObject.name.CompareTo(g2.goalCollider.gameObject.name);
     }
 
-    //Generate two random points from two different GoalSpawnAreas.
-    //One goal point and one spawn point
+    // 2つの異なる GoalSpawnArea からランダムに2点を生成（1つはゴール、1つはスポーン）
     private Vector3[] randomSpawnPoints()
     {
         Vector3 goalPointRet;
@@ -267,25 +267,26 @@ public class Agent_GoalOnly_Training : Agent
             spawnPointRet = circleRetPoints[0];
             goalPointRet = circleRetPoints[1];
         }
-        else {
+        else
+        {
             this.goals.Sort(SortGoalsByName);
             int randomSpawnIndex;
             Collider tempArea;
             if (this.manager.spawnEqually)
             {
-                //Select a goal area and a random goal point in that area
+                // ゴールエリアを選択し、そのエリア内のランダムなゴール点を選ぶ
                 randomSpawnIndex = this.agentID % this.goals.Count;
                 tempArea = goals[randomSpawnIndex].goalCollider;
                 goalPointRet = new Vector3(UnityEngine.Random.Range(tempArea.bounds.min.x, tempArea.bounds.max.x), 0f, UnityEngine.Random.Range(tempArea.bounds.min.z, tempArea.bounds.max.z));
             }
             else
             {
-                //Select a goal area and a random goal point in that area
+                // ゴールエリアをランダム選択し、そのエリア内のランダムなゴール点を選ぶ
                 randomSpawnIndex = UnityEngine.Random.Range(0, this.goals.Count);
                 tempArea = goals[randomSpawnIndex].goalCollider;
                 goalPointRet = new Vector3(UnityEngine.Random.Range(tempArea.bounds.min.x, tempArea.bounds.max.x), 0f, UnityEngine.Random.Range(tempArea.bounds.min.z, tempArea.bounds.max.z));
             }
-            //Remove selected goal area so will not select is as goal area too
+            // 選択したゴールエリアを一時的に除外し、同じエリアがスポーンに選ばれないようにする
             Monitor_OnlyGoal_Training.GoalAndSpawn tempBeforeRemove = this.goals[randomSpawnIndex];
             this.goals.Remove(this.goals[randomSpawnIndex]);
             Collider tempArea2 = null;
@@ -300,7 +301,8 @@ public class Agent_GoalOnly_Training : Agent
                         flag = true;
                 }
             }
-            else {
+            else
+            {
                 randomSpawnIndex = UnityEngine.Random.Range(0, this.goals.Count);
                 tempArea2 = this.goals[randomSpawnIndex].goalCollider;
             }
@@ -312,41 +314,41 @@ public class Agent_GoalOnly_Training : Agent
 
             this.goals.Add(tempBeforeRemove);
         }
-        
+
         Vector3[] ret = new Vector3[2];
         ret[0] = spawnPointRet;
         ret[1] = goalPointRet;
         return ret;
     }
 
-    //Observations that the agent receives at every step
-    public override void CollectObservations(VectorSensor sensor)
+    // エージェントが各ステップで受け取る観測
+    public override void CollectObservations(VectorSensor sensor) // ML-Agents関係のメソッド: 環境から観測を収集するために使用
     {
-        //Movement
+        // 移動
         var localVelocity = transform.InverseTransformDirection(this.AgentRb.velocity);
         sensor.AddObservation(localVelocity.x);// 1
         sensor.AddObservation(localVelocity.z);// 1
 
-        //Goal
+        // ゴール
         float normalized_goalDistance = normalizeInRange(this.currentGoalDistance, 0, this.manager.maxDistance);
         sensor.AddObservation(normalized_goalDistance); // 1
         sensor.AddObservation(this.currentAngle); // 1
     }
 
-    //Run every time agent  receives a new action from the action space
-    public override void OnActionReceived(ActionBuffers actionBuffers)
+    // エージェントがアクションを受け取るたびに呼ばれる
+    public override void OnActionReceived(ActionBuffers actionBuffers) // ML-Agents関係のメソッド
     {
-        // Move the agent using the action.
+        // アクションでエージェントを移動
         MoveAgent(actionBuffers.DiscreteActions);
 
-        //Save path to export csv later
+        // CSV出力用に経路を保存
         if (this.manager.saveRoutes)
             appendToRoutes();
 
-        //Assign appropriate rewards based on last action taken.
+        // 前回のアクションに基づき報酬を割り当て
         assignRewards();
 
-        //Visualize lines for debugging
+        // デバッグ可視化用の線を描画
         Vector3 forwardResized = transform.forward * 1f;
         Debug.DrawRay(transform.position, forwardResized, Color.white);
 
@@ -365,7 +367,7 @@ public class Agent_GoalOnly_Training : Agent
         Debug.DrawRay(transform.position, groubVector * gr, new Color(255, 150, 0));*/
     }
 
-    //Select a random action from the four below to help agent unstuck
+    // エージェントがスタックしたときの解除用に、下の4つのうちランダムな行動を選ぶ
     private Vector3 unstuckAction()
     {
         int randomAction = UnityEngine.Random.Range(0, 4);
@@ -383,7 +385,7 @@ public class Agent_GoalOnly_Training : Agent
         return Vector3.zero;
     }
 
-    //Move the agent based on the action taken
+    // 受け取ったアクションに基づきエージェントを移動
     private void MoveAgent(ActionSegment<int> act)
     {
         var dirToGo = Vector3.zero;
@@ -391,14 +393,14 @@ public class Agent_GoalOnly_Training : Agent
 
         var action = act[0];
 
-        //If agent stays still 20 consecutive times, select a random action
+        // 20回連続で静止した場合、ランダム行動で解除
         if (this.stillCounter >= 20)
         {
             dirToGo = unstuckAction();
             this.stillCounter = 0;
         }
 
-        //If agent choose just rotation for 20 consecutive times receive a negative reward
+        // 回転のみを20回連続で選んだ場合は罰則を与える（カウンタリセット）
         if (this.rotationCounter >= 20)
         {
             this.rotationCounter = 0;
@@ -408,7 +410,7 @@ public class Agent_GoalOnly_Training : Agent
         {
             case 0:
                 this.stillCounter++;
-                //If agent stay still for a while, select a random action ton unblock
+                // 一定時間静止したらランダム行動を選んで解除
                 break;
             case 1:
                 this.stillCounter = 0;
@@ -444,8 +446,8 @@ public class Agent_GoalOnly_Training : Agent
         AgentRb.AddForce(dirToGo * this.moveSpeed, ForceMode.VelocityChange);
     }
 
-    //Move agent using keyboard just for testing
-    public override void Heuristic(in ActionBuffers actionsOut)
+    // テスト用にキーボードでエージェントを動かす
+    public override void Heuristic(in ActionBuffers actionsOut) // ML-Agents関係のメソッド: 手動ヒューリスティック選択用
     {
         var discreteActionsOut = actionsOut.DiscreteActions;
         if (Input.GetKey(KeyCode.D))
@@ -466,7 +468,7 @@ public class Agent_GoalOnly_Training : Agent
         }
     }
 
-    //Assign rewards to the agent 
+    // エージェントに報酬を割り当てる
     private void assignRewards()
     {
         this.goalVector = this.goalPos - transform.position;
@@ -474,30 +476,30 @@ public class Agent_GoalOnly_Training : Agent
         this.currentAngle = Vector3.Angle(transform.forward, goalVector);
         this.currentGoalDistance = Vector3.Distance(transform.position, this.goalPos);
 
-        //Goal Arrival Reward
+        // ゴール到達時の報酬
         if (this.currentGoalDistance <= this.manager.goalDistanceThreshold)
         {
             AddReward(+1f * 1.8f);
-            Debug.Log("Goal");
+            Debug.Log("ゴール");
             EpisodeEnded();
         }
 
-        //Moving towards goal reward
+        // ゴールに近づく行動への報酬
         if ((this.currentAngle <= 45f) && (this.currentGoalDistance < this.goalDistance))
         {
-            //Use Wg equal to 1.8
+            // Wg = 1.8 を使用
             AddReward(+0.00075f * 1.8f);
             this.goalDistance = this.currentGoalDistance;
         }
         else
             AddReward(-0.00025f * 1.8f);
 
-        //Add a negative reward to each step to make agent find its goal as fast as possible
-        //Use Wg equal to 1.8
+        // できるだけ早くゴールさせるため、各ステップで小さな負の報酬を追加
+        // Wg = 1.8 を使用
         AddReward(-0.00015f * 1.8f);
     }
-    
-    private void EpisodeEnded()
+
+    private void EpisodeEnded() // 呼ばれるタイミング例: ゴール到達や障害物衝突時
     {
         this.countEpisode++;
         if (this.manager.oneEpisodeOnly)
@@ -507,7 +509,7 @@ public class Agent_GoalOnly_Training : Agent
                 string name = this.agentID + "_" + this.countEpisode;
                 this.manager.saveRoute(this.startingPos, this.goalPos, this.collisionsCount, name, GetCumulativeReward(), this.route);
             }
-            Destroy(this.gameObject);
+            Destroy(this.gameObject); // GameObject を削除
             return;
         }
         if (this.manager.saveRoutes && this.manager.stopSaving)
@@ -515,7 +517,7 @@ public class Agent_GoalOnly_Training : Agent
             string name = this.agentID + "_" + this.countEpisode;
             this.manager.saveRoute(this.startingPos, this.goalPos, this.collisionsCount, name, GetCumulativeReward(), this.route);
         }
-        EndEpisode();
+        EndEpisode(); // このファイル内では EndEpisode() はここだけ。GameObject はそのままで次のエピソードへ
     }
 
     public float normalizeInRange(float value, float min, float max)
@@ -524,27 +526,27 @@ public class Agent_GoalOnly_Training : Agent
         return scaledValue;
     }
 
-    //Runs when colliders get triggered
+    // コライダーがトリガーされたときに実行
     private void OnTriggerEnter(Collider other)
     {
-        //Agents collide to each other
+        // エージェント同士の衝突
         if (other.tag == "AgentCollider")
         {
-            //Use Wca equal to 2
+            // Wca = 2 を使用
             AddReward(-0.5f * 2f);
             float collDistance = Vector3.Distance(transform.position, other.gameObject.transform.position);
             float agentCollRadius = this.transform.Find("Colliders").transform.Find("BodyCollider").GetComponent<CapsuleCollider>().radius * this.gameObject.transform.localScale.x;
             if (collDistance < (1.9f * agentCollRadius))
             {
-                Debug.Log("Agent Collision");
+                Debug.Log("エージェント衝突");
                 this.collisionsCount++;
             }
         }
-        //Agent collide to an obstacle
+        // エージェントが障害物と衝突
         if (other.tag == "Obstacle" || other.tag == "Interaction")
         {
-            Debug.Log("Obstacle Collision");
-            //Use Wca equal to 2
+            Debug.Log("障害物衝突");
+            // Wca = 2 を使用
             AddReward(-0.5f * 2f);
             if (this.gameObject.name.Contains("Demo") == false)
                 EpisodeEnded();
@@ -553,21 +555,21 @@ public class Agent_GoalOnly_Training : Agent
 
     IEnumerator changeWeights()
     {
-        yield return new WaitForSeconds(this.manager.timeToInheritWeights);
+        yield return new WaitForSeconds(this.manager.timeToInheritWeights); // 設定した、エージェントが重みゾーンに入ってから重みを継承するまでの秒数だけ待つ
         this.inWeightRegion = true;
     }
 
     private void appendToRoutes()
     {
         float time = Time.fixedTime;
-        //Not record the first step until everything is initialized
+        // 初期化が完了するまでは最初のステップを記録しない
         if (time > 0)
         {
             float x = transform.position.x;
             float z = transform.position.z;
             float look_y = transform.localEulerAngles.y;
 
-            //Weights
+            // 重みを正規化
             float normalized_goal = normalizeInRange(this.goalWeight, this.manager.goalMin, this.manager.goalMax);
             float normalized_collision = normalizeInRange(this.collWeight, this.manager.collMin, this.manager.collMax);
             float normalized_group = normalizeInRange(this.groupWeight, this.manager.groupMin, this.manager.groupMax);

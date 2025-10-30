@@ -12,72 +12,72 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     public int frameCount = 0;
     private List<GoalAndSpawn> goalAreas;
     public float timeScale = 1f;
-    [Header("Environment")]
-    [Tooltip("Number of Agents [2,n]")]
+    [Header("環境")]
+    [Tooltip("エージェント数 [2,n]")]
     public int numOfAgents;
-    [Tooltip("Spawn agents gradually instead of all together. If enabled, disable GridSpawn.")]
+    [Tooltip("すべて一度にではなく段階的にエージェントをスポーンします。有効時は GridSpawn を無効にしてください。")]
     public bool spawnGradually;
-    [Tooltip("Number of agents to spawn each time [1,10]")]
-    public int spawnGraduallyNumber;
-    [Tooltip("Spread agents to spawn points equally")]
+    [Tooltip("一度にスポーンするエージェント数 [1,10]")]
+    public int spawnGraduallyNumber; // spwanGraduallyがtrueの場合に使用
+    [Tooltip("スポーンポイントへ均等に配置する")]
     public bool spawnEqually;
-    [Tooltip("Spawn agents in a grid pattern")]
+    [Tooltip("グリッドパターンでスポーンする")]
     public bool gridSpawn;
-    [Tooltip("Set all the objects in scene as interaction")]
+    [Tooltip("シーン内のすべてのオブジェクトを Interaction として設定する")]
     public bool setAllInteraction;
-    [Tooltip("Seconds to inherit weights by the time agent enter weights zone [0,n]")]
+    [Tooltip("エージェントが重みゾーンに入ってから重みを継承するまでの秒数 [0,n]")]
     public float timeToInheritWeights;
-    [Tooltip("Max distance can happen in the environment (0,n], used of distance normalization")]
+    [Tooltip("環境内での最大距離 (0,n]。距離正規化に使用")]
     public float maxDistance;
-    [Tooltip("If enabled, agents keep inherited weights when outside weights zone")]
+    [Tooltip("有効な場合、ゾーン外でも継承した重みを保持する")]
     public bool keepInheritWeights;
-    [Tooltip("Radius of weights area (0,n]")]
+    [Tooltip("重みゾーンの半径 (0,n]")]
     public float inheritWeightsDistance;
     //------------------------------
-    [Header("Agents")]
+    [Header("エージェント")]
     public GameObject agentPrefab;
-    [Tooltip("Color agents based on the weights")]
+    [Tooltip("重みに応じてエージェントを色付けする")]
     public bool coloredWeights;
     private GameObject agentParent;
     //------------------------------
-    [Tooltip("Run only one episode")]
+    [Tooltip("1エピソードのみ実行")]
     public bool oneEpisodeOnly;
-    [Tooltip("Unlimited Episode Steps")]
+    [Tooltip("エピソードステップ無制限")]
     public bool unlimitedEpisodeSteps;
-    [Tooltip("Destroy agent object on goal and recreate")]
+    [Tooltip("ゴール時にエージェントを破棄して再生成")]
     public bool disappearOnGoal;
     //------------------------------
-    [Header("Hall/Cross Environment Only")]
-    [Tooltip("Set goal point only opposite of spawn direction")]
+    [Header("ホール/クロス環境用")]
+    [Tooltip("スポーン方向の反対側のみをゴールに設定する")]
     public bool oppositeGoal;
     //------------------------------
-    [Header("Circular Environment Only")]
-    [Tooltip("Spawn agents in a circular pattern in radius circularSpawnRadius")]
+    [Header("円形環境用")]
+    [Tooltip("円形にエージェントをスポーン（半径: circularSpawnRadius）")]
     public bool circularSpawn;
-    [Tooltip("Radius for circular spawn (0,n]")]
+    [Tooltip("円形スポーンの半径 (0,n]")]
     public float circularSpawnRadius;
     //------------------------------
-    [Header("Museum Environment Only")]
-    [Tooltip("If selected start agents with goal behaviour until enter weights area.")]
+    [Header("ミュージアム環境用")]
+    [Tooltip("有効なら、エージェントは重みエリアに入るまでゴール行動で開始する。")]
     public bool demoScenes;
-    [Tooltip("Use many behaviours simultaneously")]
+    [Tooltip("複数の振る舞いを同時に使用する")]
     public bool multiBehaviors;
-    [Tooltip("Percentage of the agents have goal behaviour [0,100], all behaviours must add to 100")]
+    [Tooltip("ゴール行動を持つエージェントの割合 [0,100]（すべての割合は合計100）")]
     public float goalPercentage;
-    [Tooltip("Percentage of the agents have group behaviour [0,100], all behaviours must add to 100")]
+    [Tooltip("グループ行動を持つエージェントの割合 [0,100]（合計100）")]
     public float groupPercentage;
-    [Tooltip("Percentage of the agents have interaction behaviour [0,100], all behaviours must add to 100")]
+    [Tooltip("インタラクション行動を持つエージェントの割合 [0,100]（合計100）")]
     public float interactionPercentage;
     //------------------------------
-    [Header("Weights")]
-    [Tooltip("If enabled, you can use weights outside the limits by adjusting the min/max too.")]
+    [Header("重み")]
+    [Tooltip("有効にすると、min/max を調整して制限外の重みを使用できます。")]
     public bool extreameWeights;
     public float goalWeight;
     public float collisionWeight;
     public float interactWeight;
     public float groupWeight;
     //------------------------------
-    [Header("Min/Max Weights")]
+    [Header("重みの最小/最大")]
     public float goalMin = 0.1f;
     public float goalMax = 1.8f;
     public float collMin = 0.5f;
@@ -87,20 +87,20 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     public float groupMin = -3.0f;
     public float groupMax = 5.0f;
     //-------------------------------
-    [Header("Phase")]
+    [Header("フェーズ")]
     public int phase;
-    [Tooltip("Seconds to change phase [1,n]")]
+    [Tooltip("フェーズを切り替える間隔（秒） [1,n]")]
     public float changePhaseInterval;
     [HideInInspector] public float scaling;
     //-------------------------------
-    [Header("Reward Thresholds")]
-    [Tooltip("Distance to set goal arrival [1,n]")]
+    [Header("報酬しきい値")]
+    [Tooltip("ゴール到達と判定する距離 [1,n]")]
     public float goalDistanceThreshold;
-    [Tooltip("Distance to assume grouping [1,n]")]
+    [Tooltip("グルーピングと判断する距離 [1,n]")]
     public float groupDistanceThreshold;
-    [Tooltip("Distance to assume interaction [1,n]")]
+    [Tooltip("インタラクションと判断する距離 [1,n]")]
     public float interactionDistanceThreshold;
-    [Tooltip("Max neighbours to enable group and interaction. [2,n]")]
+    [Tooltip("グループ/インタラクションを有効にする最大近傍数 [2,n]")]
     public int maxNeighbours;
     //-------------------------------
     Toggle randomToggle;
@@ -114,24 +114,24 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     //-------------------------------
     private StatsRecorder statsRecorder;
     //-------------------------------
-    [Header("Save Routes")]
-    //Enable "saveRoutes" if you want to save the route of the agents at current run
-    [Tooltip("Enable BEFORE RUN to save routes")]
+    [Header("ルート保存")]
+    // 実行中のルートを保存したい場合は "saveRoutes" を有効にしてください
+    [Tooltip("実行前に有効にするとルートを保存します")]
     public bool saveRoutes;
-    //While the scene is playing, enable "stopSaving" to save the routes until that time to .csv files
-    [Tooltip("Enable DURING RUNTIME to stop recording and save files")]
+    // シーン再生中に "stopSaving" を有効にすると、その時点までのルートを .csv に保存します
+    [Tooltip("実行中に有効にすると記録を停止してファイルを保存します")]
     public bool stopSaving = false;
-    //The time interval between two captured points
-    [Tooltip("Seconds between recorded points")]
+    // 記録間隔（秒）
+    [Tooltip("記録間隔（秒）")]
     public float timestepInterval;
-    //The name f the folder to store the files
-    [Tooltip("Save directory")]
+    // 保存ディレクトリ
+    [Tooltip("保存ディレクトリ")]
     public string directoryPath;
     //------------------------------
     private bool interactionSet = false;
     private bool environmentExportSet = false;
 
-    //Color Picker
+    // カラーピッカー
     private bool isColorReady = false;
     private List<GameObject> rPicker;
     private List<GameObject> gPicker;
@@ -151,10 +151,10 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         Time.timeScale = this.timeScale;
     }
 
-    // Start is called before the first frame update
+    // Start は最初のフレーム前に呼ばれます
     void Start()
     {
-        //Create directory to save .csv files, if enabled
+        // 有効な場合、CSVファイルを保存するディレクトリを作成
         if (this.saveRoutes)
         {
             Directory.CreateDirectory(this.directoryPath);
@@ -165,12 +165,12 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         this.obstalceColor = GameObject.FindGameObjectWithTag("Obstacle").GetComponent<Renderer>().material.color;
         this.phase = 1;
         this.agentParent = GameObject.Find("Agents").gameObject;
-        //Find all goal and spawn areas in scene
+        // シーン内のすべてのゴールおよびスポーンエリアを取得
         this.goalAreas = new List<GoalAndSpawn>();
         initializeGoalAreas();
-        //Find all interaction objects, GameObject under "Obstacles"
+        // "Obstacles" 配下のオブジェクトをインタラクション候補として取得
         this.interactionObjects = getInteractionObjects();
-        // Create Agents
+        // エージェントを生成
         StartCoroutine(instantiateAgents());
         if (this.demoScenes == true)
         {
@@ -181,24 +181,24 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         setSliderValues(true);
         setInteractionObjects();
         updateText();
-        //Change interaction objects and ewards every "changePhaseInterval" seconds
+        // changePhaseInterval 秒ごとにインタラクションと重みを更新
         InvokeRepeating("newPhase", changePhaseInterval, changePhaseInterval);
     }
 
-    //Create agents from "AgentPrefab" prefab
-    private IEnumerator instantiateAgents()
+    // "AgentPrefab" からエージェントを生成
+    private IEnumerator instantiateAgents() // コルーチン　yieldまで同期的に実行される
     {
         WaitForSeconds wait = new WaitForSeconds(UnityEngine.Random.Range(3, 6));
         for (int i = 1; i <= this.numOfAgents; i++)
         {
-  
-            GameObject tempAgent = Instantiate(this.agentPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+
+            GameObject tempAgent = Instantiate(this.agentPrefab, new Vector3(0, 0, 0), Quaternion.identity); // プレハブが複製される
             tempAgent.transform.SetParent(this.agentParent.transform);
             tempAgent.GetComponent<Agent_GoalOnly_Training>().agentID = i;
-            if(this.unlimitedEpisodeSteps)
+            if (this.unlimitedEpisodeSteps)
                 tempAgent.GetComponent<Agent_GoalOnly_Training>().MaxStep = 0;
-            if(this.spawnGradually)
-                if(i % this.spawnGraduallyNumber == 0)
+            if (this.spawnGradually)
+                if (i % this.spawnGraduallyNumber == 0)
                     yield return wait;
         }
     }
@@ -212,8 +212,8 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
             setSliderValues(false);
         }
     }
-    
-    //Update values fo sliders
+
+    // スライダーの値を更新
     private void setSliderValues(bool initial)
     {
         if (initial)
@@ -288,7 +288,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         float nGroup = normalizeInRange(this.groupWeight, this.groupMin, this.groupMax);
         float nColl = normalizeInRange(this.collisionWeight, this.collMin, this.collMax);
 
-        GameObject.Find("goalGraphText").GetComponent<Text>().fontSize = (int) Mathf.Clamp(20f * nGoal, 4, 20);
+        GameObject.Find("goalGraphText").GetComponent<Text>().fontSize = (int)Mathf.Clamp(20f * nGoal, 4, 20);
         GameObject.Find("interactGraphText").GetComponent<Text>().fontSize = (int)Mathf.Clamp(20f * nInteract, 4, 20);
         GameObject.Find("groupGraphText").GetComponent<Text>().fontSize = (int)Mathf.Clamp(20f * nGroup, 4, 20);
         GameObject.Find("collisionGraphText").GetComponent<Text>().fontSize = (int)Mathf.Clamp(20f * nColl, 4, 20);
@@ -324,7 +324,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
             saveEnvironmentInfo();
     }
 
-    //New Phase, set new random weights, if random is enabled
+    // 新しいフェーズ：ランダム有効なら新しい重みを設定
     private void newPhase()
     {
         this.phase++;
@@ -335,12 +335,12 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         setSliderValues(false);
     }
 
-    //Update Weights, if random equals to true, use random, else use function inputs as weights
+    // 重みを更新（random が true ならランダム、false なら引数を使用）
     private void setWeights(float collision, float goal, float groub, float interact, bool random)
     {
         if (random)
         {
-            this.collisionWeight = Random.Range((this.collMin + this.collMax)/2.5f, this.collMax/1.25f);
+            this.collisionWeight = Random.Range((this.collMin + this.collMax) / 2.5f, this.collMax / 1.25f);
 
             this.goalWeight = Random.Range(0.0F, 1.0F) < 0.5F ? this.goalMin * Random.Range(0.5F, 1.0F) : this.goalMax * Random.Range(0.5F, 1.0F);
             this.groupWeight = Random.Range(0.0F, 1.0F) < 0.5F ? this.groupMin * Random.Range(0.5F, 1.0F) : this.groupMax * Random.Range(0.5F, 1.0F);
@@ -362,7 +362,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         statsRecorder.Add("Interact Weight", this.interactWeight);
     }
 
-    //Update weight text
+    // 重みの表示テキストを更新
     private void updateText()
     {
         GameObject.Find("phaseText").GetComponent<Text>().text = this.phase.ToString();
@@ -372,7 +372,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         GameObject.Find("GroupW").GetComponent<Text>().text = normalizeInRange(this.groupWeight, this.groupMin, this.groupMax).ToString("0.0");
     }
 
-    //Return list of goal and spawn areas
+    // ゴールとスポーン領域のリストを返す
     public List<GoalAndSpawn> getGoalAreas()
     {
         return this.goalAreas;
@@ -384,7 +384,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         return scaledValue;
     }
 
-    //Return list of interaction objects
+    // インタラクション対象オブジェクトのリストを返す
     private List<GameObject> getInteractionObjects()
     {
         List<GameObject> obj = new List<GameObject>();
@@ -403,18 +403,18 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
             {
                 obj.Add(child.gameObject);
             }
-        }   
+        }
         return obj;
     }
 
-    //At every phase initialize a subset of objects as interaction
+    // 各フェーズで、一部のオブジェクトを Interaction に設定
     private void setInteractionObjects()
     {
         if (this.setAllInteraction)
         {
             foreach (GameObject child in this.interactionObjects)
             {
-                child.tag = "Interaction";
+                child.tag = "Interaction"; // setAllInteractionが有効なとき
                 child.GetComponent<Renderer>().material.color = Color.red;
             }
             this.interactionSet = true;
@@ -422,24 +422,24 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         }
         foreach (GameObject child in this.interactionObjects)
         {
-            child.tag = "Obstacle";
+            child.tag = "Obstacle"; // setAllInteractionが有効でないとき
             child.GetComponent<Renderer>().material.color = this.obstalceColor;
         }
         int len = this.interactionObjects.Count;
         int times = Random.Range(3, len);
-        for (int i = 0; i < times; i++)
+        for (int i = 0; i < times; i++) // 3回以上ループ
         {
-            int index = Random.Range(0, len);
+            int index = Random.Range(0, len); // なんのため？
             this.interactionObjects[i].tag = "Interaction";
             this.interactionObjects[i].GetComponent<Renderer>().material.color = Color.red;
         }
         this.interactionSet = true;
     }
 
-    //Find goal and spawn areas in scene
+    // シーン内のゴールとスポーンエリアを検索して初期化
     private void initializeGoalAreas()
     {
-        //Initialize inside goal areas
+        // ゴールエリアを初期化
         GameObject[] goalAreasParent = GameObject.FindGameObjectsWithTag("GoalArea");
         foreach (GameObject area in goalAreasParent)
         {
@@ -455,9 +455,11 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     private void FixedUpdate()
     {
         this.frameCount++;
-        //print(this.frameCount);
+        // デバッグ用：フレーム数出力（必要なら有効化）
+        // print(this.frameCount);
     }
 
+    // 全体で１回だけ呼ばれる 環境情報をCSVに書き込む
     private void saveEnvironmentInfo()
     {
         this.environmentExportSet = true;
@@ -470,7 +472,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         writer.WriteLine(this.maxNeighbours);
 
         GameObject[] interObjects = GameObject.FindGameObjectsWithTag("Interaction");
-        foreach(GameObject g in interObjects)
+        foreach (GameObject g in interObjects)
         {
             Collider c = g.GetComponent<Collider>();
             Vector3 center = c.bounds.center;
@@ -485,7 +487,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         writer.Close();
     }
 
-    //Save routes ov every agent to .csv, if enabled
+    // 各エージェントのルートを CSV に保存（有効時）
     public void saveRoute(Vector3 start, Vector3 end, int agentCollisions, string name, float reward, List<float[]> list)
     {
         float threshold = -100;
