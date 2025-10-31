@@ -1,10 +1,11 @@
-﻿using System.Collections;
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Threading;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
+using UnityEngine;
 
 public class Agent_GoalOnly_Training : Agent
 {
@@ -74,7 +75,7 @@ public class Agent_GoalOnly_Training : Agent
     {
         this.inWeightRegion = false;
         this.startingWeights = new float[] { this.manager.goalMax, 2.5f, this.manager.interMin, -2.0f };
-        // 初回ならスポーンとゴールを初期化
+        // 初回 or disappearOnGoalが有効 → スポーンとゴールを初期化
         if (this.initial || this.manager.disappearOnGoal == true)
         {
             this.initial = false;
@@ -138,14 +139,15 @@ public class Agent_GoalOnly_Training : Agent
             }
         }
 
-        if (this.manager.demoScenes == false)
+        if (this.manager.demoScenes == false) // demoScenes有効でない
         {
+            // Monitor から重みを取得 Inspectorで設定した値とかゲーム中に変更したやつ？とかがここに入る
             this.goalWeight = this.manager.goalWeight;
             this.collWeight = this.manager.collisionWeight;
             this.interWeight = this.manager.interactWeight;
             this.groupWeight = this.manager.groupWeight;
         }
-        else
+        else // demoScenes有効
         {
             if (this.inWeightRegion == false)
             {
@@ -156,16 +158,16 @@ public class Agent_GoalOnly_Training : Agent
             }
             else
             {
-                if (this.manager.multiBehaviors == true)
+                if (this.manager.multiBehaviors == true) // 複数の振る舞いを同時に使用する IDで3パターン?に分けて重みを適用
                 {
-                    float goalAgents = (int)(this.manager.goalPercentage * this.manager.numOfAgents) / 100;
-                    float groupAgents = (int)(this.manager.groupPercentage * this.manager.numOfAgents) / 100;
-                    float interactAgents = (int)(this.manager.interactionPercentage * this.manager.numOfAgents) / 100;
+                    float goalAgents = (int)(this.manager.goalPercentage * this.manager.numOfAgents) / 100; // ゴールエージェントの数
+                    float groupAgents = (int)(this.manager.groupPercentage * this.manager.numOfAgents) / 100; // グループエージェントの数
+                    float interactAgents = (int)(this.manager.interactionPercentage * this.manager.numOfAgents) / 100; // インタラクトエージェントの数
 
                     List<float[]> ratios = new List<float[]>();
-                    ratios.Add(new float[] { goalAgents, 1.8f, 2f, -5f, -2f });
-                    ratios.Add(new float[] { interactAgents, 0.1f, 2f, 5f, 0f });
-                    ratios.Add(new float[] { groupAgents, 0.1f, 1.5f, -2f, 5f });
+                    ratios.Add(new float[] { goalAgents, 1.8f, 2f, -5f, -2f }); // [0][0], [0][1], [0][2], [0][3], [0][4]
+                    ratios.Add(new float[] { interactAgents, 0.1f, 2f, 5f, 0f }); // [1][0], [1][1], [1][2], [1][3], [1][4]
+                    ratios.Add(new float[] { groupAgents, 0.1f, 1.5f, -2f, 5f }); // [2][0], [2][1], [2][2], [2][3], [2][4]
                     ratios.Sort((p1, p2) => p1[0].CompareTo(p2[0]));
 
                     // 同カテゴリ内で複数の振る舞いを試す
@@ -191,8 +193,9 @@ public class Agent_GoalOnly_Training : Agent
                         this.groupWeight = ratios[2][4];
                     }
                 }
-                else
+                else // 複数の振る舞いを同時に使用しない 全IDに同じ重みを適用
                 {
+                    // Monitor から重みを取得 Inspectorで設定した値とかゲーム中に変更したやつ？とかがここに入る
                     this.goalWeight = this.manager.goalWeight;
                     this.collWeight = this.manager.collisionWeight;
                     this.interWeight = this.manager.interactWeight;
@@ -200,10 +203,10 @@ public class Agent_GoalOnly_Training : Agent
                 }
             }
         }
-
+        // manager.phaseと一致しなかったら(manager.phaseがインクリメントされたら)、報酬リセット?して、localPhaseをmanager.phaseに更新
         if (this.localPhase != this.manager.phase)
         {
-            SetReward(0f);
+            SetReward(0f); // ML-Agents関係のメソッド エージェントの現在の累積報酬値を0に設定→AddRewardで加算されていた報酬値が消える→GetCumulativeReward() = 0
             this.localPhase = this.manager.phase;
         }
         if (this.manager.saveRoutes && this.manager.stopSaving)
@@ -211,7 +214,7 @@ public class Agent_GoalOnly_Training : Agent
             EpisodeEnded();
             Destroy(this.gameObject);
         }
-        this.reward = GetCumulativeReward();
+        this.reward = GetCumulativeReward(); // ML-Agents関係のメソッド エージェントがこれまでに獲得した累積報酬を取得
     }
 
     // GridSpawn が有効なら 2D グリッド上の点を返す
@@ -247,7 +250,7 @@ public class Agent_GoalOnly_Training : Agent
         retPoints[0].y = 0;
         retPoints[0].z = this.manager.circularSpawnRadius * (float)Mathf.Cos(this.agentID * angleStep * Mathf.Deg2Rad);
 
-        retPoints[1] = -1f * retPoints[0];
+        retPoints[1] = -1f * retPoints[0]; // ゴールはスポーンの反対側に設定
         return retPoints;
     }
 
@@ -261,13 +264,13 @@ public class Agent_GoalOnly_Training : Agent
     {
         Vector3 goalPointRet;
         Vector3 spawnPointRet = Vector3.zero;
-        if (this.manager.circularSpawn == true)
+        if (this.manager.circularSpawn == true) // 円形にエージェントをスポーン(円形環境)
         {
             Vector3[] circleRetPoints = getCircularPoints();
             spawnPointRet = circleRetPoints[0];
             goalPointRet = circleRetPoints[1];
         }
-        else
+        else // 円形環境以外
         {
             this.goals.Sort(SortGoalsByName);
             int randomSpawnIndex;
@@ -290,7 +293,7 @@ public class Agent_GoalOnly_Training : Agent
             Monitor_OnlyGoal_Training.GoalAndSpawn tempBeforeRemove = this.goals[randomSpawnIndex];
             this.goals.Remove(this.goals[randomSpawnIndex]);
             Collider tempArea2 = null;
-            if (this.manager.oppositeGoal == true)
+            if (this.manager.oppositeGoal == true) // スポーンエリアがゴールエリアと反対側になるようにする(ホール/クロス)
             {
                 bool flag = false;
                 while (!flag)
@@ -477,9 +480,9 @@ public class Agent_GoalOnly_Training : Agent
         this.currentGoalDistance = Vector3.Distance(transform.position, this.goalPos);
 
         // ゴール到達時の報酬
-        if (this.currentGoalDistance <= this.manager.goalDistanceThreshold)
+        if (this.currentGoalDistance <= this.manager.goalDistanceThreshold) // ゴール到達したかの判定
         {
-            AddReward(+1f * 1.8f);
+            AddReward(+1f * 1.8f); // ML-Agents関係のメソッド エージェントに報酬を加える
             Debug.Log("ゴール");
             EpisodeEnded();
         }
@@ -488,15 +491,15 @@ public class Agent_GoalOnly_Training : Agent
         if ((this.currentAngle <= 45f) && (this.currentGoalDistance < this.goalDistance))
         {
             // Wg = 1.8 を使用
-            AddReward(+0.00075f * 1.8f);
+            AddReward(+0.00075f * 1.8f); // ML-Agents関係のメソッド エージェントに報酬を加える
             this.goalDistance = this.currentGoalDistance;
         }
         else
-            AddReward(-0.00025f * 1.8f);
+            AddReward(-0.00025f * 1.8f); // ML-Agents関係のメソッド エージェントに報酬を加える
 
         // できるだけ早くゴールさせるため、各ステップで小さな負の報酬を追加
         // Wg = 1.8 を使用
-        AddReward(-0.00015f * 1.8f);
+        AddReward(-0.00015f * 1.8f); // ML-Agents関係のメソッド エージェントに報酬を加える
     }
 
     private void EpisodeEnded() // 呼ばれるタイミング例: ゴール到達や障害物衝突時
@@ -533,7 +536,7 @@ public class Agent_GoalOnly_Training : Agent
         if (other.tag == "AgentCollider")
         {
             // Wca = 2 を使用
-            AddReward(-0.5f * 2f);
+            AddReward(-0.5f * 2f); // ML-Agents関係のメソッド エージェントに報酬を加える
             float collDistance = Vector3.Distance(transform.position, other.gameObject.transform.position);
             float agentCollRadius = this.transform.Find("Colliders").transform.Find("BodyCollider").GetComponent<CapsuleCollider>().radius * this.gameObject.transform.localScale.x;
             if (collDistance < (1.9f * agentCollRadius))
@@ -547,7 +550,7 @@ public class Agent_GoalOnly_Training : Agent
         {
             Debug.Log("障害物衝突");
             // Wca = 2 を使用
-            AddReward(-0.5f * 2f);
+            AddReward(-0.5f * 2f); // ML-Agents関係のメソッド エージェントに報酬を加える
             if (this.gameObject.name.Contains("Demo") == false)
                 EpisodeEnded();
         }

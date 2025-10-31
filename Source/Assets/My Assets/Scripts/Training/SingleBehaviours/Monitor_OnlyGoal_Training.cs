@@ -58,27 +58,27 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     public float circularSpawnRadius;
     //------------------------------
     [Header("ミュージアム環境用")]
-    [Tooltip("有効なら、エージェントは重みエリアに入るまでゴール行動で開始する。")]
+    [Tooltip("有効なら、エージェントは重みエリアに入るまでゴール行動で開始する。")] // このtooltipがよくわからない
     public bool demoScenes;
     [Tooltip("複数の振る舞いを同時に使用する")]
     public bool multiBehaviors;
     [Tooltip("ゴール行動を持つエージェントの割合 [0,100]（すべての割合は合計100）")]
-    public float goalPercentage;
+    public float goalPercentage; // %
     [Tooltip("グループ行動を持つエージェントの割合 [0,100]（合計100）")]
-    public float groupPercentage;
+    public float groupPercentage; // %
     [Tooltip("インタラクション行動を持つエージェントの割合 [0,100]（合計100）")]
-    public float interactionPercentage;
+    public float interactionPercentage; // %
     //------------------------------
     [Header("重み")]
     [Tooltip("有効にすると、min/max を調整して制限外の重みを使用できます。")]
-    public bool extreameWeights;
+    public bool extreameWeights; //どこで使われる？
     public float goalWeight;
     public float collisionWeight;
     public float interactWeight;
     public float groupWeight;
     //------------------------------
     [Header("重みの最小/最大")]
-    public float goalMin = 0.1f;
+    public float goalMin = 0.1f; // インスペクターで変更したら、その値が使われる 以下も同様
     public float goalMax = 1.8f;
     public float collMin = 0.5f;
     public float collMax = 3.5f;
@@ -91,7 +91,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     public int phase;
     [Tooltip("フェーズを切り替える間隔（秒） [1,n]")]
     public float changePhaseInterval;
-    [HideInInspector] public float scaling;
+    [HideInInspector] public float scaling; // HideInInspector：フィールドをインスペクターに表示しない
     //-------------------------------
     [Header("報酬しきい値")]
     [Tooltip("ゴール到達と判定する距離 [1,n]")]
@@ -163,7 +163,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         this.scaling = transform.localScale.x;
         this.statsRecorder = Academy.Instance.StatsRecorder;
         this.obstalceColor = GameObject.FindGameObjectWithTag("Obstacle").GetComponent<Renderer>().material.color;
-        this.phase = 1;
+        this.phase = 1; // 最初のフェーズは1
         this.agentParent = GameObject.Find("Agents").gameObject;
         // シーン内のすべてのゴールおよびスポーンエリアを取得
         this.goalAreas = new List<GoalAndSpawn>();
@@ -174,10 +174,10 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         StartCoroutine(instantiateAgents());
         if (this.demoScenes == true)
         {
-            setWeights(this.collisionWeight, this.goalWeight, this.groupWeight, this.interactWeight, false);
+            setWeights(this.collisionWeight, this.goalWeight, this.groupWeight, this.interactWeight, false); // 非ランダム
         }
         else
-            setWeights(0, 0, 0, 0, true);
+            setWeights(0, 0, 0, 0, true); // ランダム
         setSliderValues(true);
         setInteractionObjects();
         updateText();
@@ -223,6 +223,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
             this.interSlider = GameObject.Find("InteractSlider").GetComponent<Slider>();
             this.groupSlider = GameObject.Find("GroupSlider").GetComponent<Slider>();
 
+            // スライダーの最小/最大値を設定
             this.goalSlider.minValue = this.goalMin;
             this.goalSlider.maxValue = this.goalMax;
             this.collSlider.minValue = this.collMin;
@@ -232,7 +233,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
             this.groupSlider.minValue = this.groupMin;
             this.groupSlider.maxValue = this.groupMax;
         }
-
+        // スライダーの値を現在の重みに設定
         this.goalSlider.value = this.goalWeight;
         this.collSlider.value = this.collisionWeight;
         this.interSlider.value = this.interactWeight;
@@ -243,6 +244,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     {
         if (this.isColorReady)
         {
+            // 重みに基づいてRGBA値(エージェントの色)を出す
             int red = ((int)(normalizeInRange(this.goalWeight, this.goalMin, this.goalMax) * 255f));
             int green = ((int)(normalizeInRange(this.interactWeight, this.interMin, this.interMax) * 255f));
             int blue = ((int)(normalizeInRange(this.groupWeight, this.groupMin, this.groupMax) * 255f));
@@ -283,6 +285,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
         RectTransform canvas = GameObject.Find("SquareGraphArea").GetComponent<RectTransform>();
         RectTransform pointer = GameObject.Find("GraphPointer").GetComponent<RectTransform>();
 
+        // 正規化された重みを与える
         float nGoal = normalizeInRange(this.goalWeight, this.goalMin, this.goalMax);
         float nInteract = normalizeInRange(this.interactWeight, this.interMin, this.interMax);
         float nGroup = normalizeInRange(this.groupWeight, this.groupMin, this.groupMax);
@@ -327,7 +330,7 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     // 新しいフェーズ：ランダム有効なら新しい重みを設定
     private void newPhase()
     {
-        this.phase++;
+        this.phase++; // フェーズをインクリメント
         if (this.randomToggle.isOn)
             setWeights(0, 0, 0, 0, true);
         setInteractionObjects();
@@ -338,10 +341,9 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     // 重みを更新（random が true ならランダム、false なら引数を使用）
     private void setWeights(float collision, float goal, float groub, float interact, bool random)
     {
-        if (random)
+        if (random) // ランダムに重みを設定
         {
             this.collisionWeight = Random.Range((this.collMin + this.collMax) / 2.5f, this.collMax / 1.25f);
-
             this.goalWeight = Random.Range(0.0F, 1.0F) < 0.5F ? this.goalMin * Random.Range(0.5F, 1.0F) : this.goalMax * Random.Range(0.5F, 1.0F);
             this.groupWeight = Random.Range(0.0F, 1.0F) < 0.5F ? this.groupMin * Random.Range(0.5F, 1.0F) : this.groupMax * Random.Range(0.5F, 1.0F);
             this.interactWeight = Random.Range(0.0F, 1.0F) < 0.5F ? this.interMin * Random.Range(0.5F, 1.0F) : this.interMax * Random.Range(0.5F, 1.0F);
@@ -349,13 +351,14 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
             //this.groupWeight = Random.Range(this.groupMin, this.groupMax);
             //this.interactWeight = Random.Range(this.interMin, this.interMax);
         }
-        else
+        else // ランダムではなくスライダーで指定された重みに設定
         {
             this.collisionWeight = collision;
             this.goalWeight = goal;
             this.groupWeight = groub;
             this.interactWeight = interact;
         }
+        // ???に重みを追加
         statsRecorder.Add("Goal Weight", this.goalWeight);
         statsRecorder.Add("Collide Weight", this.collisionWeight);
         statsRecorder.Add("Group Weight", this.groupWeight);
@@ -365,7 +368,8 @@ public class Monitor_OnlyGoal_Training : MonoBehaviour
     // 重みの表示テキストを更新
     private void updateText()
     {
-        GameObject.Find("phaseText").GetComponent<Text>().text = this.phase.ToString();
+        GameObject.Find("phaseText").GetComponent<Text>().text = this.phase.ToString(); // フェーズ数を表示
+        // 正規化した重みを少数１桁でtextプロパティに値を代入する
         GameObject.Find("GoalW").GetComponent<Text>().text = normalizeInRange(this.goalWeight, this.goalMin, this.goalMax).ToString("0.0");
         GameObject.Find("CollisionW").GetComponent<Text>().text = normalizeInRange(this.collisionWeight, this.collMin, this.collMax).ToString("0.0");
         GameObject.Find("InteractW").GetComponent<Text>().text = normalizeInRange(this.interactWeight, this.interMin, this.interMax).ToString("0.0");
